@@ -253,6 +253,7 @@ hr {
 
 .receipt-info-card,
 .payment-card,
+.adjustments-card,
 .item-card {
   padding: 18px;
   background: #fffaf5;
@@ -319,6 +320,12 @@ hr {
 }
 
 .payment-section {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #ead6c0;
+}
+
+.adjustments-section {
   margin-top: 24px;
   padding-top: 22px;
   border-top: 1px solid #ead6c0;
@@ -410,6 +417,12 @@ hr {
   accent-color: #7b4b2a;
 }
 
+.adjustments-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
 /* ==========================
    PREVIEW DETAILS
 ========================== */
@@ -448,6 +461,29 @@ hr {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.preview-summary-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-summary-row,
+.preview-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-summary-row {
+  color: #5f4636;
+}
+
+.preview-summary-row strong {
+  font-size: 0.98rem;
+  color: #3f2619;
 }
 
 .preview-empty-state {
@@ -498,13 +534,6 @@ hr {
   color: #5a3825;
 }
 
-.preview-total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
 .preview-total-row strong {
   font-size: 1.35rem;
   color: #5a3825;
@@ -527,6 +556,7 @@ hr {
   }
 
   .payment-options,
+  .adjustments-fields,
   .receipt-info-fields,
   .item-fields {
     grid-template-columns: 1fr;

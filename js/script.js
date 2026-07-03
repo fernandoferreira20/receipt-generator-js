@@ -14,6 +14,8 @@ const appHeaderLogo = document.querySelector(".app-header-logo");
 const shopNameInput = document.getElementById("shop-name");
 const customerNameInput = document.getElementById("customer-name");
 const receiptDateInput = document.getElementById("receipt-date");
+const discountInput = document.getElementById("discount-percentage");
+const taxInput = document.getElementById("tax-percentage");
 const paymentMethodInputs = document.querySelectorAll('input[name="payment-method"]');
 
 const previewLogo = document.getElementById("preview-logo");
@@ -21,6 +23,11 @@ const previewShop = document.getElementById("preview-shop");
 const previewCustomer = document.getElementById("preview-customer");
 const previewDate = document.getElementById("preview-date");
 const previewProductsContainer = document.getElementById("preview-products-container");
+const previewSubtotal = document.getElementById("preview-subtotal");
+const previewDiscountLabel = document.getElementById("preview-discount-label");
+const previewDiscount = document.getElementById("preview-discount");
+const previewVatLabel = document.getElementById("preview-vat-label");
+const previewVat = document.getElementById("preview-vat");
 const previewTotal = document.getElementById("preview-total");
 const previewPaymentMethod = document.getElementById("preview-payment-method");
 
@@ -246,32 +253,71 @@ function buildGeneratedReceiptData() {
   }
 
   const products = sanitizeProductsForReceipt(collectedProducts);
+  const summary = calculateReceiptSummary(
+    products,
+    receiptInfo.discountPercentage,
+    receiptInfo.taxPercentage
+  );
   const receiptNumber = getGeneratedReceiptNumber(receiptInfo.receiptDate);
 
-  return createReceiptData(receiptInfo, products, receiptNumber);
+  return createReceiptData(receiptInfo, products, receiptNumber, summary);
 }
 
 function buildLivePreviewData() {
   const receiptInfo = collectReceiptInfo();
   const collectedProducts = collectProducts();
   const previewProducts = createPreviewProducts(collectedProducts);
+  const previewAdjustments = getPreviewAdjustmentValues(receiptInfo);
+  const summary = calculateReceiptSummary(
+    previewProducts,
+    previewAdjustments.discountPercentage,
+    previewAdjustments.taxPercentage
+  );
 
-  return {
-    shopName: formatPreviewShopName(receiptInfo.shopName),
-    customerName: receiptInfo.customerName || "---",
-    receiptDate: receiptInfo.receiptDate || "---",
-    paymentMethod: receiptInfo.paymentMethod || "Card",
-    products: previewProducts,
-    total: calculateReceiptTotal(previewProducts),
-  };
+  return createReceiptData(
+    {
+      shopName: formatPreviewShopName(receiptInfo.shopName),
+      customerName: receiptInfo.customerName || "---",
+      receiptDate: receiptInfo.receiptDate || "---",
+      paymentMethod: receiptInfo.paymentMethod || "Card",
+      discountPercentage: previewAdjustments.discountPercentage,
+      taxPercentage: previewAdjustments.taxPercentage,
+    },
+    previewProducts,
+    state.generatedReceiptNumber,
+    summary
+  );
 }
 
 function collectReceiptInfo() {
+  const rawDiscount = discountInput ? discountInput.value.trim() : "";
+  const rawTax = taxInput ? taxInput.value.trim() : "";
+
   return {
     shopName: shopNameInput ? shopNameInput.value.trim() : "",
     customerName: customerNameInput ? customerNameInput.value.trim() : "",
     receiptDate: receiptDateInput ? receiptDateInput.value.trim() : "",
     paymentMethod: getSelectedPaymentMethod(),
+    discountPercentage: parseNumberValue(rawDiscount),
+    taxPercentage: parseNumberValue(rawTax),
+  };
+}
+
+function createReceiptData(receiptInfo, products, receiptNumber, summary) {
+  return {
+    shopName: receiptInfo.shopName,
+    customerName: receiptInfo.customerName,
+    receiptDate: receiptInfo.receiptDate,
+    paymentMethod: receiptInfo.paymentMethod,
+    discountPercentage: receiptInfo.discountPercentage,
+    taxPercentage: receiptInfo.taxPercentage,
+    receiptNumber,
+    products,
+    subtotal: summary.subtotal,
+    discountAmount: summary.discountAmount,
+    taxableAmount: summary.taxableAmount,
+    taxAmount: summary.taxAmount,
+    total: summary.total,
   };
 }
 
@@ -328,18 +374,6 @@ function createPreviewProducts(collectedProducts) {
     });
 }
 
-function createReceiptData(receiptInfo, products, receiptNumber) {
-  return {
-    shopName: receiptInfo.shopName,
-    customerName: receiptInfo.customerName,
-    receiptDate: receiptInfo.receiptDate,
-    paymentMethod: receiptInfo.paymentMethod,
-    receiptNumber,
-    products,
-    total: calculateReceiptTotal(products),
-  };
-}
-
 function validateReceiptInfo(receiptInfo) {
   if (!receiptInfo.shopName) {
     alert("Coffee shop name is required.");
@@ -362,6 +396,36 @@ function validateReceiptInfo(receiptInfo) {
   if (!receiptInfo.paymentMethod) {
     alert("Payment method is required.");
     focusInput(paymentMethodInputs[0]);
+    return false;
+  }
+
+  if (!Number.isFinite(receiptInfo.discountPercentage)) {
+    alert("Discount percentage must be a valid number.");
+    focusInput(discountInput);
+    return false;
+  }
+
+  if (receiptInfo.discountPercentage < 0) {
+    alert("Discount percentage cannot be negative.");
+    focusInput(discountInput);
+    return false;
+  }
+
+  if (receiptInfo.discountPercentage > 100) {
+    alert("Discount percentage cannot be greater than 100.");
+    focusInput(discountInput);
+    return false;
+  }
+
+  if (!Number.isFinite(receiptInfo.taxPercentage)) {
+    alert("VAT / Tax percentage must be a valid number.");
+    focusInput(taxInput);
+    return false;
+  }
+
+  if (receiptInfo.taxPercentage < 0) {
+    alert("VAT / Tax percentage cannot be negative.");
+    focusInput(taxInput);
     return false;
   }
 
@@ -430,6 +494,26 @@ function updateReceiptPreview(receiptData) {
 
   if (previewTotal) {
     previewTotal.textContent = formatAmount(receiptData.total);
+  }
+
+  if (previewSubtotal) {
+    previewSubtotal.textContent = formatAmount(receiptData.subtotal);
+  }
+
+  if (previewDiscountLabel) {
+    previewDiscountLabel.textContent = `Discount (${formatPercentage(receiptData.discountPercentage)})`;
+  }
+
+  if (previewDiscount) {
+    previewDiscount.textContent = formatAmount(receiptData.discountAmount);
+  }
+
+  if (previewVatLabel) {
+    previewVatLabel.textContent = `VAT / Tax (${formatPercentage(receiptData.taxPercentage)})`;
+  }
+
+  if (previewVat) {
+    previewVat.textContent = formatAmount(receiptData.taxAmount);
   }
 
   if (previewPaymentMethod) {
@@ -656,31 +740,70 @@ function drawProductsTable(doc, receiptData, startY, layout) {
 }
 
 function drawReceiptTotal(doc, receiptData, currentY, layout) {
-  currentY = ensurePdfSectionSpace(doc, currentY, 22, receiptData, layout);
+  currentY = ensurePdfSectionSpace(doc, currentY, 48, receiptData, layout);
+  const summaryHeight = 42;
 
   doc.setFillColor(248, 239, 227);
   doc.roundedRect(
     layout.leftMargin,
     currentY,
     layout.contentWidth,
-    16,
+    summaryHeight,
     3,
     3,
     "F"
   );
 
+  doc.setFontSize(9);
+  doc.setTextColor(123, 75, 42);
+  doc.text("Subtotal", layout.leftMargin + 4, currentY + 8);
+  doc.text(
+    `Discount (${formatPercentage(receiptData.discountPercentage)})`,
+    layout.leftMargin + 4,
+    currentY + 15
+  );
+  doc.text(
+    `VAT / Tax (${formatPercentage(receiptData.taxPercentage)})`,
+    layout.leftMargin + 4,
+    currentY + 22
+  );
+
+  doc.setTextColor(43, 29, 20);
+  doc.text(formatCurrency(receiptData.subtotal), layout.rightMargin - 4, currentY + 8, {
+    align: "right",
+  });
+  doc.text(
+    `-${formatCurrency(receiptData.discountAmount)}`,
+    layout.rightMargin - 4,
+    currentY + 15,
+    {
+      align: "right",
+    }
+  );
+  doc.text(formatCurrency(receiptData.taxAmount), layout.rightMargin - 4, currentY + 22, {
+    align: "right",
+  });
+
+  doc.setDrawColor(214, 191, 168);
+  doc.line(
+    layout.leftMargin + 4,
+    currentY + 27,
+    layout.rightMargin - 4,
+    currentY + 27
+  );
+
   doc.setFontSize(10);
   doc.setTextColor(123, 75, 42);
-  doc.text("FINAL TOTAL", layout.leftMargin + 4, currentY + 10);
+  doc.text("FINAL TOTAL", layout.leftMargin + 4, currentY + 35);
 
   doc.setFontSize(16);
   doc.setTextColor(90, 56, 37);
-  doc.text(formatCurrency(receiptData.total), layout.rightMargin - 4, currentY + 10, {
+  doc.text(formatCurrency(receiptData.total), layout.rightMargin - 4, currentY + 35, {
     align: "right",
   });
 
   doc.setTextColor(43, 29, 20);
-  return currentY + 24;
+  return currentY + summaryHeight + 6;
 }
 
 function drawReceiptPaymentMethod(doc, receiptData, currentY, layout) {
@@ -879,14 +1002,51 @@ function getGeneratedReceiptNumber(receiptDate) {
   return state.generatedReceiptNumber;
 }
 
+function getPreviewAdjustmentValues(receiptInfo) {
+  return {
+    discountPercentage: normalizePreviewAdjustmentValue(
+      receiptInfo.discountPercentage,
+      100
+    ),
+    taxPercentage: normalizePreviewAdjustmentValue(receiptInfo.taxPercentage),
+  };
+}
+
+function normalizePreviewAdjustmentValue(value, maximumValue) {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  return clampNumber(safeValue, 0, maximumValue);
+}
+
+function calculateReceiptSummary(products, discountPercentage, taxPercentage) {
+  const subtotal = roundCurrencyAmount(calculateReceiptTotal(products));
+  const discountAmount = roundCurrencyAmount(
+    subtotal * (discountPercentage / 100)
+  );
+  const taxableAmount = roundCurrencyAmount(subtotal - discountAmount);
+  const taxAmount = roundCurrencyAmount(taxableAmount * (taxPercentage / 100));
+  const total = roundCurrencyAmount(taxableAmount + taxAmount);
+
+  return {
+    subtotal,
+    discountAmount,
+    taxableAmount,
+    taxAmount,
+    total,
+  };
+}
+
 function calculateProductTotal(quantity, unitPrice) {
-  return quantity * unitPrice;
+  return roundCurrencyAmount(quantity * unitPrice);
 }
 
 function calculateReceiptTotal(products) {
   return products.reduce(function (total, product) {
     return total + product.total;
   }, 0);
+}
+
+function roundCurrencyAmount(amount) {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
 function parseNumberValue(value) {
@@ -929,6 +1089,14 @@ function formatAmount(amount) {
 
 function formatCurrency(amount) {
   return `€${formatAmount(amount)}`;
+}
+
+function formatPercentage(value) {
+  if (!Number.isFinite(value)) {
+    return "0%";
+  }
+
+  return `${value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")}%`;
 }
 
 function formatPreviewNumber(value) {
@@ -1074,6 +1242,20 @@ function getContainedLogoSize(aspectRatio, maxWidth, maxHeight) {
     width,
     height,
   };
+}
+
+function clampNumber(value, minimumValue, maximumValue) {
+  let clampedValue = value;
+
+  if (clampedValue < minimumValue) {
+    clampedValue = minimumValue;
+  }
+
+  if (typeof maximumValue === "number" && clampedValue > maximumValue) {
+    clampedValue = maximumValue;
+  }
+
+  return clampedValue;
 }
 
 function needsPdfPageBreak(doc, currentY, requiredHeight, bottomMargin) {
