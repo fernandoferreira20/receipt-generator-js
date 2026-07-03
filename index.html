@@ -136,6 +136,52 @@
           </button>
         </div>
 
+        <!-- ==========================
+                Payment Method Section
+            ========================== -->
+
+        <div class="payment-section">
+          <div class="payment-card">
+            <div class="item-card-header">
+              <span>Payment Method</span>
+            </div>
+
+            <p class="form-card-description">
+              Select how the customer completed the payment.
+            </p>
+
+            <div class="payment-options">
+              <label class="payment-option">
+                <input
+                  type="radio"
+                  name="payment-method"
+                  value="Cash"
+                />
+                <span>Cash</span>
+              </label>
+
+              <label class="payment-option">
+                <input
+                  type="radio"
+                  name="payment-method"
+                  value="Card"
+                  checked
+                />
+                <span>Card</span>
+              </label>
+
+              <label class="payment-option">
+                <input
+                  type="radio"
+                  name="payment-method"
+                  value="Contactless"
+                />
+                <span>Contactless</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
         <button type="submit">Generate Receipt</button>
       </form>
     </section>
@@ -179,6 +225,13 @@
         <div class="preview-total-row">
           <span>TOTAL</span>
           <strong>€<span id="preview-total">0.00</span></strong>
+        </div>
+
+        <hr />
+
+        <div class="preview-payment-block">
+          <span class="preview-section-title">Payment Method</span>
+          <strong id="preview-payment-method">Card</strong>
         </div>
       </div>
 

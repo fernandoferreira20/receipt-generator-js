@@ -14,6 +14,7 @@ const appHeaderLogo = document.querySelector(".app-header-logo");
 const shopNameInput = document.getElementById("shop-name");
 const customerNameInput = document.getElementById("customer-name");
 const receiptDateInput = document.getElementById("receipt-date");
+const paymentMethodInputs = document.querySelectorAll('input[name="payment-method"]');
 
 const previewLogo = document.getElementById("preview-logo");
 const previewShop = document.getElementById("preview-shop");
@@ -21,6 +22,7 @@ const previewCustomer = document.getElementById("preview-customer");
 const previewDate = document.getElementById("preview-date");
 const previewProductsContainer = document.getElementById("preview-products-container");
 const previewTotal = document.getElementById("preview-total");
+const previewPaymentMethod = document.getElementById("preview-payment-method");
 
 // ======================================
 // STATE
@@ -28,6 +30,7 @@ const previewTotal = document.getElementById("preview-total");
 
 const state = {
   currentReceiptData: null,
+  generatedReceiptNumber: null,
   logoDataUrl: null,
   logoAspectRatio: 1,
   logoLoadPromise: null,
@@ -243,8 +246,9 @@ function buildGeneratedReceiptData() {
   }
 
   const products = sanitizeProductsForReceipt(collectedProducts);
+  const receiptNumber = getGeneratedReceiptNumber(receiptInfo.receiptDate);
 
-  return createReceiptData(receiptInfo, products, generateReceiptNumber());
+  return createReceiptData(receiptInfo, products, receiptNumber);
 }
 
 function buildLivePreviewData() {
@@ -256,6 +260,7 @@ function buildLivePreviewData() {
     shopName: formatPreviewShopName(receiptInfo.shopName),
     customerName: receiptInfo.customerName || "---",
     receiptDate: receiptInfo.receiptDate || "---",
+    paymentMethod: receiptInfo.paymentMethod || "Card",
     products: previewProducts,
     total: calculateReceiptTotal(previewProducts),
   };
@@ -266,6 +271,7 @@ function collectReceiptInfo() {
     shopName: shopNameInput ? shopNameInput.value.trim() : "",
     customerName: customerNameInput ? customerNameInput.value.trim() : "",
     receiptDate: receiptDateInput ? receiptDateInput.value.trim() : "",
+    paymentMethod: getSelectedPaymentMethod(),
   };
 }
 
@@ -327,6 +333,7 @@ function createReceiptData(receiptInfo, products, receiptNumber) {
     shopName: receiptInfo.shopName,
     customerName: receiptInfo.customerName,
     receiptDate: receiptInfo.receiptDate,
+    paymentMethod: receiptInfo.paymentMethod,
     receiptNumber,
     products,
     total: calculateReceiptTotal(products),
@@ -349,6 +356,12 @@ function validateReceiptInfo(receiptInfo) {
   if (!receiptInfo.receiptDate) {
     alert("Receipt date is required.");
     focusInput(receiptDateInput);
+    return false;
+  }
+
+  if (!receiptInfo.paymentMethod) {
+    alert("Payment method is required.");
+    focusInput(paymentMethodInputs[0]);
     return false;
   }
 
@@ -417,6 +430,10 @@ function updateReceiptPreview(receiptData) {
 
   if (previewTotal) {
     previewTotal.textContent = formatAmount(receiptData.total);
+  }
+
+  if (previewPaymentMethod) {
+    previewPaymentMethod.textContent = receiptData.paymentMethod;
   }
 
   renderPreviewProducts(receiptData.products);
@@ -510,6 +527,7 @@ function createReceiptTemplate(doc, receiptData) {
   currentY = drawCustomerInfo(doc, receiptData, currentY, layout);
   currentY = drawProductsTable(doc, receiptData, currentY, layout);
   currentY = drawReceiptTotal(doc, receiptData, currentY, layout);
+  currentY = drawReceiptPaymentMethod(doc, receiptData, currentY, layout);
   drawReceiptFooter(doc, receiptData, currentY, layout);
 }
 
@@ -662,6 +680,32 @@ function drawReceiptTotal(doc, receiptData, currentY, layout) {
   });
 
   doc.setTextColor(43, 29, 20);
+  return currentY + 24;
+}
+
+function drawReceiptPaymentMethod(doc, receiptData, currentY, layout) {
+  currentY = ensurePdfSectionSpace(doc, currentY, 24, receiptData, layout);
+
+  doc.setFillColor(255, 250, 243);
+  doc.setDrawColor(214, 191, 168);
+  doc.roundedRect(
+    layout.leftMargin,
+    currentY,
+    layout.contentWidth,
+    18,
+    3,
+    3,
+    "FD"
+  );
+
+  doc.setFontSize(9);
+  doc.setTextColor(123, 75, 42);
+  doc.text("PAYMENT METHOD", layout.leftMargin + 4, currentY + 7);
+
+  doc.setFontSize(11);
+  doc.setTextColor(43, 29, 20);
+  doc.text(receiptData.paymentMethod, layout.leftMargin + 4, currentY + 13);
+
   return currentY + 24;
 }
 
@@ -819,6 +863,22 @@ function setDefaultReceiptDate() {
   }
 }
 
+function getSelectedPaymentMethod() {
+  const selectedInput = Array.from(paymentMethodInputs).find(function (input) {
+    return input.checked;
+  });
+
+  return selectedInput ? selectedInput.value : "";
+}
+
+function getGeneratedReceiptNumber(receiptDate) {
+  if (!state.generatedReceiptNumber) {
+    state.generatedReceiptNumber = generateReceiptNumber(receiptDate);
+  }
+
+  return state.generatedReceiptNumber;
+}
+
 function calculateProductTotal(quantity, unitPrice) {
   return quantity * unitPrice;
 }
@@ -888,11 +948,27 @@ function getTodayDateString() {
   return `${year}-${month}-${day}`;
 }
 
-function generateReceiptNumber() {
-  const timestamp = String(Date.now()).slice(-6);
-  const randomNumber = String(Math.floor(Math.random() * 900) + 100);
+function generateReceiptNumber(receiptDate) {
+  const datePart = formatReceiptNumberDate(receiptDate);
+  const sequence = generateReceiptSequence();
 
-  return `RCPT-${timestamp}${randomNumber}`;
+  return `RCPT-${datePart}-${sequence}`;
+}
+
+function formatReceiptNumberDate(receiptDate) {
+  const safeReceiptDate = receiptDate || getTodayDateString();
+  return safeReceiptDate.replace(/-/g, "");
+}
+
+function generateReceiptSequence() {
+  if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+    const randomValues = new Uint32Array(1);
+    window.crypto.getRandomValues(randomValues);
+
+    return String(randomValues[0] % 100000).padStart(5, "0");
+  }
+
+  return String(Math.floor(Math.random() * 100000)).padStart(5, "0");
 }
 
 async function ensureLogoDataLoaded() {
