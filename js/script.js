@@ -15,6 +15,7 @@ const receiptDateInput = document.getElementById("receipt-date");
 const previewShop = document.getElementById("preview-shop");
 const previewCustomer = document.getElementById("preview-customer");
 const previewDate = document.getElementById("preview-date");
+const previewProductsContainer = document.getElementById("preview-products-container");
 const previewTotal = document.getElementById("preview-total");
 
 // ======================================
@@ -23,7 +24,6 @@ const previewTotal = document.getElementById("preview-total");
 
 const state = {
   currentReceiptData: null,
-  previewProductsContainer: null,
 };
 
 // ======================================
@@ -33,14 +33,14 @@ const state = {
 initializeApp();
 
 function initializeApp() {
-  if (!receiptForm || !itemsContainer || !receiptPreview) {
+  if (!receiptForm || !itemsContainer || !receiptPreview || !previewProductsContainer) {
     return;
   }
 
   receiptForm.setAttribute("novalidate", "novalidate");
-  ensurePreviewProductsContainer();
-  renderPreviewProducts([]);
+  setDefaultReceiptDate();
   updateProductCards();
+  refreshLivePreview();
 
   receiptForm.addEventListener("submit", handleFormSubmit);
   receiptForm.addEventListener("input", handleFormInputChange);
@@ -59,7 +59,7 @@ function initializeApp() {
 function handleFormSubmit(event) {
   event.preventDefault();
 
-  const receiptData = buildReceiptData();
+  const receiptData = buildGeneratedReceiptData();
 
   if (!receiptData) {
     state.currentReceiptData = null;
@@ -72,7 +72,6 @@ function handleFormSubmit(event) {
   }
 
   state.currentReceiptData = receiptData;
-  updateReceiptPreview(receiptData);
 
   if (downloadButton) {
     downloadButton.disabled = false;
@@ -81,11 +80,13 @@ function handleFormSubmit(event) {
 
 function handleFormInputChange() {
   markReceiptAsOutdated();
+  refreshLivePreview();
 }
 
 function handleAddProductButtonClick() {
   addProductCard();
   markReceiptAsOutdated();
+  refreshLivePreview();
 }
 
 function handleItemsContainerClick(event) {
@@ -98,6 +99,7 @@ function handleItemsContainerClick(event) {
   const productCard = removeButton.closest(".item-card");
   removeProductCard(productCard);
   markReceiptAsOutdated();
+  refreshLivePreview();
 }
 
 function handleDownloadButtonClick() {
@@ -120,10 +122,10 @@ function addProductCard() {
   itemsContainer.appendChild(productCard);
   updateProductCards();
 
-  const productNameInput = productCard.querySelector(".item-name");
+  const productNameField = productCard.querySelector(".item-name");
 
-  if (productNameInput) {
-    productNameInput.focus();
+  if (productNameField) {
+    productNameField.focus();
   }
 }
 
@@ -191,20 +193,11 @@ function updateProductCards() {
 }
 
 function updateProductCardTitle(card, productNumber) {
-  const header = card.querySelector(".item-card-header");
+  const title = card.querySelector(".item-card-header span");
 
-  if (!header) {
-    return;
+  if (title) {
+    title.textContent = `Product ${productNumber}`;
   }
-
-  let title = header.querySelector("span");
-
-  if (!title) {
-    title = document.createElement("span");
-    header.insertBefore(title, header.firstChild);
-  }
-
-  title.textContent = `Product ${productNumber}`;
 }
 
 function syncRemoveButton(card, shouldShowRemoveButton) {
@@ -233,20 +226,38 @@ function syncRemoveButton(card, shouldShowRemoveButton) {
 // RECEIPT DATA
 // ======================================
 
-function buildReceiptData() {
-  const products = collectProducts();
+function buildGeneratedReceiptData() {
+  const receiptInfo = collectReceiptInfo();
+  const collectedProducts = collectProducts();
 
-  if (!validateProducts(products)) {
+  if (!validateReceiptInfo(receiptInfo) || !validateProducts(collectedProducts)) {
     return null;
   }
 
+  const products = sanitizeProductsForReceipt(collectedProducts);
+
+  return createReceiptData(receiptInfo, products, generateReceiptNumber());
+}
+
+function buildLivePreviewData() {
+  const receiptInfo = collectReceiptInfo();
+  const collectedProducts = collectProducts();
+  const previewProducts = createPreviewProducts(collectedProducts);
+
   return {
-    shopName: getInputValue(shopNameInput, "Coffee Shop Name"),
-    customerName: getInputValue(customerNameInput, "Walk-in Customer"),
-    receiptDate: getInputValue(receiptDateInput, getTodayDateString()),
-    receiptNumber: generateReceiptNumber(),
-    products,
-    total: calculateReceiptTotal(products),
+    shopName: receiptInfo.shopName || "Coffee Shop Name",
+    customerName: receiptInfo.customerName || "---",
+    receiptDate: receiptInfo.receiptDate || "---",
+    products: previewProducts,
+    total: calculateReceiptTotal(previewProducts),
+  };
+}
+
+function collectReceiptInfo() {
+  return {
+    shopName: shopNameInput ? shopNameInput.value.trim() : "",
+    customerName: customerNameInput ? customerNameInput.value.trim() : "",
+    receiptDate: receiptDateInput ? receiptDateInput.value.trim() : "",
   };
 }
 
@@ -257,19 +268,83 @@ function collectProducts() {
     const unitPriceInput = card.querySelector(".item-price");
 
     const name = nameInput ? nameInput.value.trim() : "";
-    const quantityValue = quantityInput ? quantityInput.value.trim() : "";
-    const unitPriceValue = unitPriceInput ? unitPriceInput.value.trim() : "";
-
-    const quantity = quantityValue === "" ? Number.NaN : Number(quantityValue);
-    const unitPrice = unitPriceValue === "" ? Number.NaN : Number(unitPriceValue);
+    const rawQuantity = quantityInput ? quantityInput.value.trim() : "";
+    const rawUnitPrice = unitPriceInput ? unitPriceInput.value.trim() : "";
+    const quantity = parseNumberValue(rawQuantity);
+    const unitPrice = parseNumberValue(rawUnitPrice);
 
     return {
+      card,
+      nameInput,
+      quantityInput,
+      unitPriceInput,
       name,
+      rawQuantity,
+      rawUnitPrice,
       quantity,
       unitPrice,
-      total: quantity * unitPrice,
     };
   });
+}
+
+function sanitizeProductsForReceipt(collectedProducts) {
+  return collectedProducts.map(function (product) {
+    return {
+      name: product.name,
+      quantity: product.quantity,
+      unitPrice: product.unitPrice,
+      total: calculateProductTotal(product.quantity, product.unitPrice),
+    };
+  });
+}
+
+function createPreviewProducts(collectedProducts) {
+  return collectedProducts
+    .filter(shouldDisplayPreviewProduct)
+    .map(function (product) {
+      const quantity = normalizePreviewNumber(product.quantity);
+      const unitPrice = normalizePreviewNumber(product.unitPrice);
+
+      return {
+        name: product.name || "Untitled Product",
+        quantity,
+        unitPrice,
+        total: calculateProductTotal(quantity, unitPrice),
+      };
+    });
+}
+
+function createReceiptData(receiptInfo, products, receiptNumber) {
+  return {
+    shopName: receiptInfo.shopName,
+    customerName: receiptInfo.customerName,
+    receiptDate: receiptInfo.receiptDate,
+    receiptNumber,
+    products,
+    total: calculateReceiptTotal(products),
+  };
+}
+
+function validateReceiptInfo(receiptInfo) {
+  if (!receiptInfo.shopName) {
+    alert("Coffee shop name is required.");
+    focusInput(shopNameInput);
+    return false;
+  }
+
+  if (!receiptInfo.customerName) {
+    alert("Customer name is required.");
+    focusInput(customerNameInput);
+    return false;
+  }
+
+  if (!receiptInfo.receiptDate) {
+    alert("Receipt date is required.");
+    focusInput(receiptDateInput);
+    return false;
+  }
+
+  return true;
 }
 
 function validateProducts(products) {
@@ -284,21 +359,25 @@ function validateProducts(products) {
 
     if (!product.name) {
       alert(`Product ${productNumber}: product name cannot be empty.`);
+      focusInput(product.nameInput);
       return false;
     }
 
     if (!Number.isFinite(product.quantity) || product.quantity <= 0) {
       alert(`Product ${productNumber}: quantity must be greater than 0.`);
+      focusInput(product.quantityInput);
       return false;
     }
 
     if (!Number.isFinite(product.unitPrice)) {
       alert(`Product ${productNumber}: unit price is required.`);
+      focusInput(product.unitPriceInput);
       return false;
     }
 
     if (product.unitPrice < 0) {
       alert(`Product ${productNumber}: unit price cannot be negative.`);
+      focusInput(product.unitPriceInput);
       return false;
     }
   }
@@ -309,6 +388,11 @@ function validateProducts(products) {
 // ======================================
 // PREVIEW UPDATE
 // ======================================
+
+function refreshLivePreview() {
+  const previewData = buildLivePreviewData();
+  updateReceiptPreview(previewData);
+}
 
 function updateReceiptPreview(receiptData) {
   if (previewShop) {
@@ -330,80 +414,61 @@ function updateReceiptPreview(receiptData) {
   renderPreviewProducts(receiptData.products);
 }
 
-function ensurePreviewProductsContainer() {
-  if (state.previewProductsContainer) {
-    return state.previewProductsContainer;
-  }
-
-  const existingContainer = document.getElementById("preview-products-container");
-
-  if (existingContainer) {
-    state.previewProductsContainer = existingContainer;
-    return existingContainer;
-  }
-
-  const oldItemRow = document.getElementById("preview-item")?.closest("p");
-  const oldQuantityRow = document.getElementById("preview-quantity")?.closest("p");
-  const oldPriceRow = document.getElementById("preview-price")?.closest("p");
-  const totalHeading = previewTotal ? previewTotal.closest("h3") : null;
-
-  const productsSection = document.createElement("div");
-  productsSection.id = "preview-products-section";
-
-  const sectionLabel = document.createElement("p");
-  const sectionLabelStrong = document.createElement("strong");
-  sectionLabelStrong.textContent = "Products:";
-  sectionLabel.appendChild(sectionLabelStrong);
-
-  const productsContainer = document.createElement("div");
-  productsContainer.id = "preview-products-container";
-
-  productsSection.appendChild(sectionLabel);
-  productsSection.appendChild(productsContainer);
-
-  if (oldItemRow && oldItemRow.parentNode === receiptPreview) {
-    receiptPreview.insertBefore(productsSection, oldItemRow);
-  } else if (totalHeading && totalHeading.parentNode === receiptPreview) {
-    receiptPreview.insertBefore(productsSection, totalHeading);
-  } else {
-    receiptPreview.appendChild(productsSection);
-  }
-
-  [oldItemRow, oldQuantityRow, oldPriceRow].forEach(function (row) {
-    if (row) {
-      row.remove();
-    }
-  });
-
-  state.previewProductsContainer = productsContainer;
-  return productsContainer;
-}
-
 function renderPreviewProducts(products) {
-  const productsContainer = ensurePreviewProductsContainer();
-  productsContainer.replaceChildren();
+  previewProductsContainer.replaceChildren();
 
   if (products.length === 0) {
     const emptyMessage = document.createElement("p");
-    emptyMessage.textContent = "No products generated yet.";
-    productsContainer.appendChild(emptyMessage);
+    emptyMessage.className = "preview-empty-state";
+    emptyMessage.textContent = "Add products to preview the receipt.";
+    previewProductsContainer.appendChild(emptyMessage);
     return;
   }
 
   products.forEach(function (product, index) {
-    const productRow = document.createElement("p");
-    const productName = document.createElement("strong");
-
-    productName.textContent = `${index + 1}. ${product.name}`;
-    productRow.appendChild(productName);
-    productRow.appendChild(
-      document.createTextNode(
-        ` - Qty: ${product.quantity} | Unit Price: ${formatCurrency(product.unitPrice)} | Total: ${formatCurrency(product.total)}`
-      )
-    );
-
-    productsContainer.appendChild(productRow);
+    previewProductsContainer.appendChild(createPreviewProductCard(product, index + 1));
   });
+}
+
+function createPreviewProductCard(product, productNumber) {
+  const productCard = document.createElement("div");
+  productCard.className = "preview-product-card";
+
+  const heading = document.createElement("div");
+  heading.className = "preview-product-heading";
+
+  const number = document.createElement("span");
+  number.className = "preview-product-number";
+  number.textContent = `${productNumber}.`;
+
+  const name = document.createElement("span");
+  name.className = "preview-product-name";
+  name.textContent = product.name;
+
+  heading.appendChild(number);
+  heading.appendChild(name);
+
+  const details = document.createElement("div");
+  details.className = "preview-product-details";
+
+  const quantity = document.createElement("span");
+  quantity.textContent = `Qty: ${formatPreviewNumber(product.quantity)}`;
+
+  const unitPrice = document.createElement("span");
+  unitPrice.textContent = `${formatCurrency(product.unitPrice)} each`;
+
+  details.appendChild(quantity);
+  details.appendChild(unitPrice);
+
+  const subtotal = document.createElement("div");
+  subtotal.className = "preview-product-subtotal";
+  subtotal.textContent = `Subtotal: ${formatCurrency(product.total)}`;
+
+  productCard.appendChild(heading);
+  productCard.appendChild(details);
+  productCard.appendChild(subtotal);
+
+  return productCard;
 }
 
 // ======================================
@@ -490,7 +555,7 @@ function drawPdfProductRows(doc, products, startY, rightMargin) {
     }
 
     doc.text(nameLines, 20, currentY);
-    doc.text(String(product.quantity), 120, currentY, { align: "right" });
+    doc.text(formatPreviewNumber(product.quantity), 120, currentY, { align: "right" });
     doc.text(formatCurrency(product.unitPrice), 155, currentY, {
       align: "right",
     });
@@ -522,13 +587,14 @@ function markReceiptAsOutdated() {
   }
 }
 
-function getInputValue(inputElement, fallbackValue) {
-  if (!inputElement) {
-    return fallbackValue;
+function setDefaultReceiptDate() {
+  if (receiptDateInput && !receiptDateInput.value) {
+    receiptDateInput.value = getTodayDateString();
   }
+}
 
-  const value = inputElement.value.trim();
-  return value || fallbackValue;
+function calculateProductTotal(quantity, unitPrice) {
+  return quantity * unitPrice;
 }
 
 function calculateReceiptTotal(products) {
@@ -537,12 +603,44 @@ function calculateReceiptTotal(products) {
   }, 0);
 }
 
+function parseNumberValue(value) {
+  if (value === "") {
+    return Number.NaN;
+  }
+
+  return Number(value);
+}
+
+function normalizePreviewNumber(value) {
+  if (!Number.isFinite(value) || value < 0) {
+    return 0;
+  }
+
+  return value;
+}
+
+function shouldDisplayPreviewProduct(product) {
+  return (
+    product.name !== "" ||
+    product.rawUnitPrice !== "" ||
+    (product.rawQuantity !== "" && product.rawQuantity !== "1")
+  );
+}
+
 function formatAmount(amount) {
   return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
 }
 
 function formatCurrency(amount) {
   return `€${formatAmount(amount)}`;
+}
+
+function formatPreviewNumber(value) {
+  if (!Number.isFinite(value)) {
+    return "0";
+  }
+
+  return Number.isInteger(value) ? String(value) : String(value);
 }
 
 function getTodayDateString() {
@@ -575,4 +673,10 @@ function ensurePdfContentSpace(doc, currentY, requiredHeight) {
 
 function sanitizeFileName(value) {
   return String(value).replace(/[^a-z0-9_-]/gi, "-");
+}
+
+function focusInput(inputElement) {
+  if (inputElement) {
+    inputElement.focus();
+  }
 }

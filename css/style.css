@@ -69,7 +69,7 @@ h3 {
   margin-bottom: 15px;
 }
 
-.form-section p {
+.form-section > p {
   margin: 10px 0 28px;
   color: #6b4f3f;
   line-height: 1.6;
@@ -193,6 +193,31 @@ hr {
 }
 
 /* ==========================
+   RECEIPT INFORMATION
+========================== */
+
+.receipt-info-card,
+.item-card {
+  padding: 18px;
+  background: #fffaf5;
+  border: 1px solid #ead6c0;
+  border-radius: 16px;
+}
+
+.form-card-description {
+  margin: 0 0 18px;
+  font-size: 0.9rem;
+  color: #7a5a45;
+  line-height: 1.5;
+}
+
+.receipt-info-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ==========================
    RESPONSIVE DESIGN
 ========================== */
 
@@ -209,6 +234,11 @@ hr {
 
   h1 {
     font-size: 1.7rem;
+  }
+
+  .receipt-info-fields,
+  .preview-meta-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -243,13 +273,6 @@ hr {
   gap: 16px;
 }
 
-.item-card {
-  padding: 18px;
-  background: #fffaf5;
-  border: 1px solid #ead6c0;
-  border-radius: 16px;
-}
-
 .item-card-header {
   display: flex;
   justify-content: space-between;
@@ -270,6 +293,16 @@ hr {
   min-width: 0;
 }
 
+.remove-item-button {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  background: #b97954;
+}
+
+.remove-item-button:hover {
+  background: #9e5f3c;
+}
+
 #add-item-button {
   width: 100%;
   margin-top: 16px;
@@ -280,11 +313,112 @@ hr {
   background: #5a3825;
 }
 
+/* ==========================
+   PREVIEW DETAILS
+========================== */
+
+.preview-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.preview-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(139, 94, 60, 0.18);
+}
+
+.preview-meta-label,
+.preview-section-title,
+.preview-total-row > span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7b4b2a;
+}
+
+.preview-section-title {
+  margin: 0 0 12px;
+}
+
+#preview-products-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preview-empty-state {
+  margin: 0;
+  color: #7a5a45;
+  font-size: 0.95rem;
+}
+
+.preview-product-card {
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #d6bfa8;
+}
+
+.preview-product-card:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.preview-product-heading {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.preview-product-number {
+  min-width: 18px;
+  font-weight: 700;
+  color: #7b4b2a;
+}
+
+.preview-product-name {
+  font-weight: 700;
+  color: #3f2619;
+}
+
+.preview-product-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 8px;
+  color: #5f4636;
+  font-size: 0.92rem;
+}
+
+.preview-product-subtotal {
+  margin-top: 8px;
+  font-weight: 600;
+  color: #5a3825;
+}
+
+.preview-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-total-row strong {
+  font-size: 1.35rem;
+  color: #5a3825;
+}
+
 @media (max-width: 900px) {
   .app-container {
     grid-template-columns: 1fr;
   }
 
+  .receipt-info-fields,
   .item-fields {
     grid-template-columns: 1fr;
   }

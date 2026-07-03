@@ -14,64 +14,112 @@
 
       <form id="receipt-form">
         <!-- ==========================
+                Receipt Information Section
+            ========================== -->
+
+        <div class="receipt-info-section">
+          <div class="receipt-info-card">
+            <div class="item-card-header">
+              <span>Receipt Information</span>
+            </div>
+
+            <p class="form-card-description">
+              Add the basic details that will appear on the receipt.
+            </p>
+
+            <div class="receipt-info-fields">
+              <label>
+                Coffee Shop Name
+                <input
+                  type="text"
+                  id="shop-name"
+                  placeholder="Example: Morning Brew"
+                  required
+                />
+              </label>
+
+              <label>
+                Customer Name
+                <input
+                  type="text"
+                  id="customer-name"
+                  placeholder="Example: Alex Johnson"
+                  required
+                />
+              </label>
+
+              <label>
+                Receipt Date
+                <input
+                  type="date"
+                  id="receipt-date"
+                  required
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================
                 Products Section
             ========================== -->
 
-            <div class="products-section">
-            <div class="products-header">
-                <div>
+        <div class="products-section">
+          <div class="products-header">
+            <div>
                 <h3>Products</h3>
                 <p>Add the products included in this receipt.</p>
-                </div>
             </div>
+          </div>
 
-            <div id="items-container">
-                <div class="item-card">
-                <div class="item-card-header">
-                    <span>Product 1</span>
-                </div>
+          <div id="items-container">
+            <div class="item-card">
+              <div class="item-card-header">
+                <span>Product 1</span>
+              </div>
 
-                <div class="item-fields">
-                    <label>
+              <div class="item-fields">
+                <label>
                     Product Name
                     <input
-                        type="text"
-                        class="item-name"
-                        placeholder="Example: Cappuccino"
-                        required
+                      type="text"
+                      class="item-name"
+                      placeholder="Example: Cappuccino"
+                      required
                     />
-                    </label>
+                </label>
 
-                    <label>
+                <label>
                     Quantity
                     <input
-                        type="number"
-                        class="item-quantity"
-                        min="1"
-                        value="1"
-                        required
+                      type="number"
+                      class="item-quantity"
+                      min="1"
+                      value="1"
+                      required
                     />
-                    </label>
+                </label>
 
-                    <label>
+                <label>
                     Unit Price (€)
                     <input
-                        type="number"
-                        class="item-price"
-                        placeholder="2.50"
-                        step="0.01"
-                        min="0"
-                        required
+                      type="number"
+                      class="item-price"
+                      placeholder="2.50"
+                      step="0.01"
+                      min="0"
+                      required
                     />
-                    </label>
-                </div>
-                </div>
+                </label>
+              </div>
             </div>
+          </div>
 
-            <button type="button" id="add-item-button">
-                + Add Product
-            </button>
-            </div>
+          <button type="button" id="add-item-button">
+            + Add Product
+          </button>
+        </div>
+
         <button type="submit">Generate Receipt</button>
       </form>
     </section>
@@ -81,18 +129,34 @@
 
       <div class="receipt-card" id="receipt-preview">
         <h3 id="preview-shop">Coffee Shop Name</h3>
-        <p><strong>Customer:</strong> <span id="preview-customer">---</span></p>
-        <p><strong>Date:</strong> <span id="preview-date">---</span></p>
+
+        <div class="preview-meta-grid">
+          <div class="preview-meta-item">
+            <span class="preview-meta-label">Customer</span>
+            <span id="preview-customer">---</span>
+          </div>
+
+          <div class="preview-meta-item">
+            <span class="preview-meta-label">Date</span>
+            <span id="preview-date">---</span>
+          </div>
+        </div>
 
         <hr />
 
-        <p><strong>Item:</strong> <span id="preview-item">---</span></p>
-        <p><strong>Quantity:</strong> <span id="preview-quantity">---</span></p>
-        <p><strong>Unit Price:</strong> €<span id="preview-price">0.00</span></p>
+        <div class="preview-products-section">
+          <p class="preview-section-title">Products</p>
+          <div id="preview-products-container">
+            <p class="preview-empty-state">Add products to preview the receipt.</p>
+          </div>
+        </div>
 
         <hr />
 
-        <h3>Total: €<span id="preview-total">0.00</span></h3>
+        <div class="preview-total-row">
+          <span>TOTAL</span>
+          <strong>€<span id="preview-total">0.00</span></strong>
+        </div>
       </div>
 
       <button id="download-pdf" disabled>Download PDF</button>
