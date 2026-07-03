@@ -1,82 +1,192 @@
-// Select the form using its ID from the HTML
+// ======================================
+// DOM ELEMENTS
+// ======================================
+
+// Form element
 const receiptForm = document.getElementById("receipt-form");
 
-// Listen for the form submit event
-receiptForm.addEventListener("submit", function (event) {
-  // Prevent the page from reloading after submitting the form
+// PDF download button
+const downloadButton = document.getElementById("download-pdf");
+
+
+// ======================================
+// EVENT LISTENERS
+// ======================================
+
+// Run handleFormSubmit when the form is submitted
+receiptForm.addEventListener("submit", handleFormSubmit);
+
+// Run generatePDF when the download button is clicked
+downloadButton.addEventListener("click", generatePDF);
+
+
+// ======================================
+// FORM HANDLING
+// ======================================
+
+function handleFormSubmit(event) {
+  // Prevent the page from reloading
   event.preventDefault();
 
-  // Get the value typed in the Coffee Shop Name input
+  // Get the data typed by the user
+  const receiptData = getFormData();
+
+  // Update the receipt preview on the page
+  updateReceiptPreview(receiptData);
+
+  // Enable the PDF download button
+  downloadButton.disabled = false;
+}
+
+
+// ======================================
+// DATA COLLECTION
+// ======================================
+
+function getFormData() {
+  // Get values from input fields
   const shopName = document.getElementById("shop-name").value;
-
-  // Show the shop name in the browser console
-  console.log("Coffee Shop Name:", shopName);
-
-  // Get the remaining values from the form
   const customerName = document.getElementById("customer-name").value;
   const receiptDate = document.getElementById("receipt-date").value;
   const itemName = document.getElementById("item-name").value;
   const quantity = document.getElementById("quantity").value;
   const unitPrice = document.getElementById("unit-price").value;
 
-  // Calculate the total price
-  const total = quantity * unitPrice;
+  // Calculate total price
+  const total = Number(quantity) * Number(unitPrice);
 
-  // Update the receipt preview
-  document.getElementById("preview-shop").textContent = shopName;
-  document.getElementById("preview-customer").textContent = customerName;
-  document.getElementById("preview-date").textContent = receiptDate;
-  document.getElementById("preview-item").textContent = itemName;
-  document.getElementById("preview-quantity").textContent = quantity;
-  document.getElementById("preview-price").textContent = Number(unitPrice).toFixed(2);
-  document.getElementById("preview-total").textContent = total.toFixed(2);
+  // Return all receipt information as one object
+  return {
+    shopName,
+    customerName,
+    receiptDate,
+    itemName,
+    quantity,
+    unitPrice,
+    total,
+  };
+}
 
-  // Enable the PDF download button
-  document.getElementById("download-pdf").disabled = false;
-});
 
-// Select the PDF download button
-const downloadButton = document.getElementById("download-pdf");
+// ======================================
+// PREVIEW UPDATE
+// ======================================
 
-// Listen for click on the PDF download button
-downloadButton.addEventListener("click", function () {
-  // Access jsPDF from the loaded library
+function updateReceiptPreview(receiptData) {
+  // Update shop and customer information
+  document.getElementById("preview-shop").textContent = receiptData.shopName;
+  document.getElementById("preview-customer").textContent = receiptData.customerName;
+  document.getElementById("preview-date").textContent = receiptData.receiptDate;
+
+  // Update item information
+  document.getElementById("preview-item").textContent = receiptData.itemName;
+  document.getElementById("preview-quantity").textContent = receiptData.quantity;
+  document.getElementById("preview-price").textContent = Number(receiptData.unitPrice).toFixed(2);
+
+  // Update total
+  document.getElementById("preview-total").textContent = receiptData.total.toFixed(2);
+}
+
+
+// ======================================
+// PDF GENERATION
+// ======================================
+
+function generatePDF() {
+  // Access jsPDF from the external library
   const { jsPDF } = window.jspdf;
 
   // Create a new PDF document
   const doc = new jsPDF();
 
-  // Get receipt preview values
-  const shopName = document.getElementById("preview-shop").textContent;
-  const customerName = document.getElementById("preview-customer").textContent;
-  const receiptDate = document.getElementById("preview-date").textContent;
-  const itemName = document.getElementById("preview-item").textContent;
-  const quantity = document.getElementById("preview-quantity").textContent;
-  const unitPrice = document.getElementById("preview-price").textContent;
-  const total = document.getElementById("preview-total").textContent;
+  // Get the current information from the preview
+  const receiptData = getPreviewData();
 
-  // Add receipt content to the PDF
-  doc.setFontSize(20);
-  doc.text(shopName, 105, 20, { align: "center" });
+  // Generate a random receipt number
+  const receiptNumber = Math.floor(Math.random() * 100000);
 
-  doc.setFontSize(12);
-  doc.text(`Customer: ${customerName}`, 20, 40);
-  doc.text(`Date: ${receiptDate}`, 20, 50);
+  // Add content to the PDF
+  createReceiptTemplate(doc, receiptData, receiptNumber);
 
-  doc.line(20, 60, 190, 60);
+  // Save the PDF file
+  doc.save(`receipt-${receiptNumber}.pdf`);
+}
 
-  doc.text(`Item: ${itemName}`, 20, 75);
-  doc.text(`Quantity: ${quantity}`, 20, 85);
-  doc.text(`Unit Price: €${unitPrice}`, 20, 95);
 
-  doc.line(20, 105, 190, 105);
+// ======================================
+// PREVIEW DATA COLLECTION
+// ======================================
 
-  doc.setFontSize(16);
-  doc.text(`Total: €${total}`, 20, 120);
+function getPreviewData() {
+  // Get values currently displayed in the receipt preview
+  return {
+    shopName: document.getElementById("preview-shop").textContent,
+    customerName: document.getElementById("preview-customer").textContent,
+    receiptDate: document.getElementById("preview-date").textContent,
+    itemName: document.getElementById("preview-item").textContent,
+    quantity: document.getElementById("preview-quantity").textContent,
+    unitPrice: document.getElementById("preview-price").textContent,
+    total: document.getElementById("preview-total").textContent,
+  };
+}
+
+
+// ======================================
+// PDF TEMPLATE
+// ======================================
+
+function createReceiptTemplate(doc, receiptData, receiptNumber) {
+  // Receipt header
+  doc.setFontSize(22);
+  doc.text(receiptData.shopName.toUpperCase(), 105, 20, {
+    align: "center",
+  });
 
   doc.setFontSize(10);
-  doc.text("Thank you for your purchase!", 105, 145, { align: "center" });
+  doc.text("Coffee Shop Receipt", 105, 28, {
+    align: "center",
+  });
 
-  // Download the PDF file
-  doc.save("receipt.pdf");
-});
+  // Receipt information
+  doc.text(`Receipt #: ${receiptNumber}`, 20, 40);
+  doc.text(`Date: ${receiptData.receiptDate}`, 20, 48);
+  doc.text(`Customer: ${receiptData.customerName}`, 20, 56);
+
+  // Separator line
+  doc.line(20, 65, 190, 65);
+
+  // Table header
+  doc.setFontSize(11);
+  doc.text("Item", 20, 75);
+  doc.text("Qty", 115, 75);
+  doc.text("Price", 145, 75);
+  doc.text("Total", 175, 75);
+
+  doc.line(20, 80, 190, 80);
+
+  // Product row
+  doc.text(receiptData.itemName, 20, 90);
+  doc.text(receiptData.quantity, 118, 90);
+  doc.text(`€${receiptData.unitPrice}`, 145, 90);
+  doc.text(`€${receiptData.total}`, 175, 90);
+
+  doc.line(20, 100, 190, 100);
+
+  // Total section
+  doc.setFontSize(16);
+  doc.text(`TOTAL: €${receiptData.total}`, 190, 115, {
+    align: "right",
+  });
+
+  // Footer
+  doc.setFontSize(10);
+  doc.text("Payment Method: Card / Cash", 20, 130);
+
+  doc.text("Thank you for your visit!", 105, 145, {
+    align: "center",
+  });
+
+  doc.text("www.receiptgeneratorjs.com", 105, 152, {
+    align: "center",
+  });
+}
