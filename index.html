@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Receipt Generator JS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-container">
+    <section class="form-section">
+      <h1>Receipt Generator</h1>
+      <p>Create simple PDF receipts for your coffee shop.</p>
+
+      <form id="receipt-form">
+        <label>
+          Coffee Shop Name
+          <input type="text" id="shop-name" placeholder="Example: Venice Coffee" required />
+        </label>
+
+        <label>
+          Customer Name
+          <input type="text" id="customer-name" placeholder="Example: John Doe" required />
+        </label>
+
+        <label>
+          Date
+          <input type="date" id="receipt-date" required />
+        </label>
+
+        <label>
+          Item
+          <input type="text" id="item-name" placeholder="Example: Cappuccino" required />
+        </label>
+
+        <label>
+          Quantity
+          <input type="number" id="quantity" min="1" value="1" required />
+        </label>
+
+        <label>
+          Unit Price (€)
+          <input type="number" id="unit-price" min="0" step="0.01" placeholder="2.50" required />
+        </label>
+
+        <button type="submit">Generate Receipt</button>
+      </form>
+    </section>
+
+    <section class="preview-section">
+      <h2>Receipt Preview</h2>
+
+      <div class="receipt-card" id="receipt-preview">
+        <h3 id="preview-shop">Coffee Shop Name</h3>
+        <p><strong>Customer:</strong> <span id="preview-customer">---</span></p>
+        <p><strong>Date:</strong> <span id="preview-date">---</span></p>
+
+        <hr />
+
+        <p><strong>Item:</strong> <span id="preview-item">---</span></p>
+        <p><strong>Quantity:</strong> <span id="preview-quantity">---</span></p>
+        <p><strong>Unit Price:</strong> €<span id="preview-price">0.00</span></p>
+
+        <hr />
+
+        <h3>Total: €<span id="preview-total">0.00</span></h3>
+      </div>
+
+      <button id="download-pdf" disabled>Download PDF</button>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
