@@ -4,9 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Receipt Generator JS</title>
+  <link rel="icon" type="image/png" href="assets/icons/Logo.png" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <header class="app-header">
+    <div class="app-header-brand">
+      <img
+        class="app-header-logo"
+        src="assets/icons/Logo.png"
+        alt="Receipt Generator JS logo"
+      />
+
+      <div class="app-header-copy">
+        <p class="app-header-title">Receipt Generator JS</p>
+        <p class="app-header-subtitle">Coffee shop PDF receipt generator</p>
+      </div>
+    </div>
+  </header>
+
   <main class="app-container">
     <section class="form-section">
       <h1>Receipt Generator</h1>
@@ -128,7 +144,14 @@
       <h2>Receipt Preview</h2>
 
       <div class="receipt-card" id="receipt-preview">
-        <h3 id="preview-shop">Coffee Shop Name</h3>
+        <img
+          id="preview-logo"
+          class="preview-logo"
+          src="assets/icons/Logo.png"
+          alt="Coffee shop logo"
+        />
+
+        <h3 id="preview-shop">— Coffee Shop —</h3>
 
         <div class="preview-meta-grid">
           <div class="preview-meta-item">

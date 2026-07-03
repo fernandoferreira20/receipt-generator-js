@@ -2,16 +2,20 @@
 // DOM ELEMENTS
 // ======================================
 
+const LOGO_PATH = "assets/icons/Logo.png";
+
 const receiptForm = document.getElementById("receipt-form");
 const downloadButton = document.getElementById("download-pdf");
 const addProductButton = document.getElementById("add-item-button");
 const itemsContainer = document.getElementById("items-container");
 const receiptPreview = document.getElementById("receipt-preview");
+const appHeaderLogo = document.querySelector(".app-header-logo");
 
 const shopNameInput = document.getElementById("shop-name");
 const customerNameInput = document.getElementById("customer-name");
 const receiptDateInput = document.getElementById("receipt-date");
 
+const previewLogo = document.getElementById("preview-logo");
 const previewShop = document.getElementById("preview-shop");
 const previewCustomer = document.getElementById("preview-customer");
 const previewDate = document.getElementById("preview-date");
@@ -24,6 +28,9 @@ const previewTotal = document.getElementById("preview-total");
 
 const state = {
   currentReceiptData: null,
+  logoDataUrl: null,
+  logoAspectRatio: 1,
+  logoLoadPromise: null,
 };
 
 // ======================================
@@ -37,6 +44,7 @@ function initializeApp() {
     return;
   }
 
+  setBrandImages();
   receiptForm.setAttribute("novalidate", "novalidate");
   setDefaultReceiptDate();
   updateProductCards();
@@ -102,13 +110,13 @@ function handleItemsContainerClick(event) {
   refreshLivePreview();
 }
 
-function handleDownloadButtonClick() {
+async function handleDownloadButtonClick() {
   if (!state.currentReceiptData) {
     alert("Please generate the receipt before downloading the PDF.");
     return;
   }
 
-  generatePDF(state.currentReceiptData);
+  await generatePDF(state.currentReceiptData);
 }
 
 // ======================================
@@ -245,7 +253,7 @@ function buildLivePreviewData() {
   const previewProducts = createPreviewProducts(collectedProducts);
 
   return {
-    shopName: receiptInfo.shopName || "Coffee Shop Name",
+    shopName: formatPreviewShopName(receiptInfo.shopName),
     customerName: receiptInfo.customerName || "---",
     receiptDate: receiptInfo.receiptDate || "---",
     products: previewProducts,
@@ -475,9 +483,16 @@ function createPreviewProductCard(product, productNumber) {
 // PDF GENERATION
 // ======================================
 
-function generatePDF(receiptData) {
+async function generatePDF(receiptData) {
   if (!window.jspdf || !window.jspdf.jsPDF) {
     alert("The PDF library is not available right now.");
+    return;
+  }
+
+  try {
+    await ensureLogoDataLoaded();
+  } catch (error) {
+    alert("The logo could not be loaded for the PDF.");
     return;
   }
 
@@ -502,31 +517,34 @@ function drawReceiptHeader(doc, receiptData, layout, isContinuation) {
   const subtitle = isContinuation
     ? "Coffee Shop Receipt - Continued"
     : "Coffee Shop Receipt";
-
-  doc.setFillColor(90, 56, 37);
-  doc.roundedRect(
-    layout.leftMargin,
+  const logoBottomY = drawPdfLogo(
+    doc,
+    layout.pageWidth / 2,
     layout.topMargin,
-    layout.contentWidth,
-    22,
-    4,
-    4,
-    "F"
+    isContinuation ? 18 : 24,
+    isContinuation ? 18 : 24
   );
+  const shopNameY = logoBottomY + 10;
+  const subtitleY = shopNameY + 8;
+  const dividerY = subtitleY + 7;
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(isContinuation ? 18 : 20);
-  doc.text(String(receiptData.shopName).toUpperCase(), layout.pageWidth / 2, 26, {
+  doc.setFontSize(isContinuation ? 16 : 19);
+  doc.setTextColor(90, 56, 37);
+  doc.text(formatPdfShopName(receiptData.shopName), layout.pageWidth / 2, shopNameY, {
     align: "center",
   });
 
   doc.setFontSize(9);
-  doc.text(subtitle, layout.pageWidth / 2, 33, {
+  doc.setTextColor(123, 75, 42);
+  doc.text(subtitle, layout.pageWidth / 2, subtitleY, {
     align: "center",
   });
 
+  doc.setDrawColor(214, 191, 168);
+  doc.line(layout.leftMargin, dividerY, layout.rightMargin, dividerY);
+
   doc.setTextColor(43, 29, 20);
-  return 48;
+  return dividerY + 10;
 }
 
 function drawCustomerInfo(doc, receiptData, startY, layout) {
@@ -648,7 +666,7 @@ function drawReceiptTotal(doc, receiptData, currentY, layout) {
 }
 
 function drawReceiptFooter(doc, receiptData, currentY, layout) {
-  currentY = ensurePdfSectionSpace(doc, currentY, 22, receiptData, layout);
+  currentY = ensurePdfSectionSpace(doc, currentY, 30, receiptData, layout);
 
   const footerLines = doc.splitTextToSize(
     "Fresh coffee, warm service, and one more reason to come back.",
@@ -725,7 +743,6 @@ function ensurePdfSectionSpace(doc, currentY, requiredHeight, receiptData, layou
 
 function getPdfLayout(doc) {
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
   const leftMargin = 18;
   const rightMargin = pageWidth - 18;
   const contentWidth = rightMargin - leftMargin;
@@ -735,7 +752,6 @@ function getPdfLayout(doc) {
 
   return {
     pageWidth,
-    pageHeight,
     topMargin: 16,
     bottomMargin: 18,
     leftMargin,
@@ -751,6 +767,26 @@ function getPdfLayout(doc) {
   };
 }
 
+function drawPdfLogo(doc, centerX, topY, maxWidth, maxHeight) {
+  if (!state.logoDataUrl) {
+    return topY;
+  }
+
+  const logoSize = getContainedLogoSize(state.logoAspectRatio, maxWidth, maxHeight);
+  const logoX = centerX - logoSize.width / 2;
+
+  doc.addImage(
+    state.logoDataUrl,
+    "PNG",
+    logoX,
+    topY,
+    logoSize.width,
+    logoSize.height
+  );
+
+  return topY + logoSize.height;
+}
+
 // ======================================
 // HELPER FUNCTIONS
 // ======================================
@@ -764,6 +800,16 @@ function markReceiptAsOutdated() {
 
   if (downloadButton) {
     downloadButton.disabled = true;
+  }
+}
+
+function setBrandImages() {
+  if (appHeaderLogo) {
+    appHeaderLogo.src = LOGO_PATH;
+  }
+
+  if (previewLogo) {
+    previewLogo.src = LOGO_PATH;
   }
 }
 
@@ -807,6 +853,16 @@ function shouldDisplayPreviewProduct(product) {
   );
 }
 
+function formatPreviewShopName(name) {
+  const safeName = name ? name.trim() : "";
+  return safeName ? `— ${safeName} —` : "— Coffee Shop —";
+}
+
+function formatPdfShopName(name) {
+  const safeName = name ? name.trim() : "";
+  return safeName || "Coffee Shop";
+}
+
 function formatAmount(amount) {
   return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
 }
@@ -837,6 +893,111 @@ function generateReceiptNumber() {
   const randomNumber = String(Math.floor(Math.random() * 900) + 100);
 
   return `RCPT-${timestamp}${randomNumber}`;
+}
+
+async function ensureLogoDataLoaded() {
+  if (state.logoDataUrl) {
+    return;
+  }
+
+  if (!state.logoLoadPromise) {
+    state.logoLoadPromise = loadLogoData();
+  }
+
+  try {
+    await state.logoLoadPromise;
+  } finally {
+    state.logoLoadPromise = null;
+  }
+}
+
+async function loadLogoData() {
+  try {
+    await loadLogoDataFromFetch();
+  } catch (error) {
+    await loadLogoDataFromImageElement();
+  }
+}
+
+async function loadLogoDataFromFetch() {
+  const response = await fetch(LOGO_PATH);
+
+  if (!response.ok) {
+    throw new Error("Unable to fetch the logo file.");
+  }
+
+  const logoBlob = await response.blob();
+  const dataUrl = await readBlobAsDataUrl(logoBlob);
+  const imageElement = await loadImageElement(dataUrl);
+
+  state.logoDataUrl = dataUrl;
+  state.logoAspectRatio = imageElement.naturalWidth / imageElement.naturalHeight;
+}
+
+async function loadLogoDataFromImageElement() {
+  const imageElement = await loadImageElement(LOGO_PATH);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = imageElement.naturalWidth;
+  canvas.height = imageElement.naturalHeight;
+
+  if (!context) {
+    throw new Error("Unable to create a canvas context for the logo.");
+  }
+
+  context.drawImage(imageElement, 0, 0);
+
+  state.logoDataUrl = canvas.toDataURL("image/png");
+  state.logoAspectRatio = imageElement.naturalWidth / imageElement.naturalHeight;
+}
+
+function readBlobAsDataUrl(blob) {
+  return new Promise(function (resolve, reject) {
+    const reader = new FileReader();
+
+    reader.onload = function () {
+      resolve(reader.result);
+    };
+
+    reader.onerror = function () {
+      reject(new Error("Unable to read the logo file."));
+    };
+
+    reader.readAsDataURL(blob);
+  });
+}
+
+function loadImageElement(source) {
+  return new Promise(function (resolve, reject) {
+    const image = new Image();
+
+    image.onload = function () {
+      resolve(image);
+    };
+
+    image.onerror = function () {
+      reject(new Error("Unable to load the logo image."));
+    };
+
+    image.src = source;
+  });
+}
+
+function getContainedLogoSize(aspectRatio, maxWidth, maxHeight) {
+  const safeAspectRatio = aspectRatio > 0 ? aspectRatio : 1;
+  let width = maxWidth;
+  let height = width / safeAspectRatio;
+
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * safeAspectRatio;
+  }
+
+  return {
+    width,
+    height,
+  };
 }
 
 function needsPdfPageBreak(doc, currentY, requiredHeight, bottomMargin) {
