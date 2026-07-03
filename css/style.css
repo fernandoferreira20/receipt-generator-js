@@ -30,8 +30,16 @@ body {
   max-width: 1150px;
   margin: 50px auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) 430px;
   gap: 32px;
+}
+
+.preview-section {
+  min-width: 0;
+}
+
+.receipt-card {
+  width: 100%;
 }
 
 /* ==========================
@@ -202,4 +210,69 @@ hr {
   h1 {
     font-size: 1.7rem;
   }
+}
+
+/* ==========================
+   PRODUCTS SECTION
+========================== */
+
+.products-section {
+  margin-top: 20px;
+}
+
+.products-section h3 {
+  margin-bottom: 15px;
+  color: #3f2619;
+}
+
+/* Container that stores all product rows */
+#items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* One product row */
+.item-row {
+  display: grid;
+  grid-template-columns: 2fr 90px 130px;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Prevent inputs from overflowing */
+.item-row input {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Add Product button */
+#add-item-button {
+  width: 100%;
+  margin-top: 15px;
+  background: #7b4b2a;
+}
+
+#add-item-button:hover {
+  background: #5a3825;
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media (max-width: 900px) {
+
+  .app-container {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-section {
+    order: -1;
+  }
+
+  .item-row {
+    grid-template-columns: 1fr;
+  }
+
 }

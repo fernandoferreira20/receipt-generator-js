@@ -13,36 +13,65 @@
       <p>Create simple PDF receipts for your coffee shop.</p>
 
       <form id="receipt-form">
-        <label>
-          Coffee Shop Name
-          <input type="text" id="shop-name" placeholder="Example: Venice Coffee" required />
-        </label>
+        <!-- ==========================
+                Products Section
+            ========================== -->
 
-        <label>
-          Customer Name
-          <input type="text" id="customer-name" placeholder="Example: John Doe" required />
-        </label>
+            <div class="products-section">
+            <div class="products-header">
+                <div>
+                <h3>Products</h3>
+                <p>Add the products included in this receipt.</p>
+                </div>
+            </div>
 
-        <label>
-          Date
-          <input type="date" id="receipt-date" required />
-        </label>
+            <div id="items-container">
+                <div class="item-card">
+                <div class="item-card-header">
+                    <span>Product 1</span>
+                </div>
 
-        <label>
-          Item
-          <input type="text" id="item-name" placeholder="Example: Cappuccino" required />
-        </label>
+                <div class="item-fields">
+                    <label>
+                    Product Name
+                    <input
+                        type="text"
+                        class="item-name"
+                        placeholder="Example: Cappuccino"
+                        required
+                    />
+                    </label>
 
-        <label>
-          Quantity
-          <input type="number" id="quantity" min="1" value="1" required />
-        </label>
+                    <label>
+                    Quantity
+                    <input
+                        type="number"
+                        class="item-quantity"
+                        min="1"
+                        value="1"
+                        required
+                    />
+                    </label>
 
-        <label>
-          Unit Price (€)
-          <input type="number" id="unit-price" min="0" step="0.01" placeholder="2.50" required />
-        </label>
+                    <label>
+                    Unit Price (€)
+                    <input
+                        type="number"
+                        class="item-price"
+                        placeholder="2.50"
+                        step="0.01"
+                        min="0"
+                        required
+                    />
+                    </label>
+                </div>
+                </div>
+            </div>
 
+            <button type="button" id="add-item-button">
+                + Add Product
+            </button>
+            </div>
         <button type="submit">Generate Receipt</button>
       </form>
     </section>
