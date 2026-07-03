@@ -489,86 +489,266 @@ function generatePDF(receiptData) {
 }
 
 function createReceiptTemplate(doc, receiptData) {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const rightMargin = pageWidth - 20;
+  const layout = getPdfLayout(doc);
 
-  doc.setFontSize(22);
-  doc.text(String(receiptData.shopName).toUpperCase(), pageWidth / 2, 20, {
+  let currentY = drawReceiptHeader(doc, receiptData, layout);
+  currentY = drawCustomerInfo(doc, receiptData, currentY, layout);
+  currentY = drawProductsTable(doc, receiptData, currentY, layout);
+  currentY = drawReceiptTotal(doc, receiptData, currentY, layout);
+  drawReceiptFooter(doc, receiptData, currentY, layout);
+}
+
+function drawReceiptHeader(doc, receiptData, layout, isContinuation) {
+  const subtitle = isContinuation
+    ? "Coffee Shop Receipt - Continued"
+    : "Coffee Shop Receipt";
+
+  doc.setFillColor(90, 56, 37);
+  doc.roundedRect(
+    layout.leftMargin,
+    layout.topMargin,
+    layout.contentWidth,
+    22,
+    4,
+    4,
+    "F"
+  );
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(isContinuation ? 18 : 20);
+  doc.text(String(receiptData.shopName).toUpperCase(), layout.pageWidth / 2, 26, {
     align: "center",
   });
 
-  doc.setFontSize(10);
-  doc.text("Coffee Shop Receipt", pageWidth / 2, 28, {
+  doc.setFontSize(9);
+  doc.text(subtitle, layout.pageWidth / 2, 33, {
     align: "center",
   });
+
+  doc.setTextColor(43, 29, 20);
+  return 48;
+}
+
+function drawCustomerInfo(doc, receiptData, startY, layout) {
+  const customerLines = doc.splitTextToSize(
+    receiptData.customerName,
+    layout.customerColumnWidth
+  );
+  const infoBoxHeight = Math.max(32, customerLines.length * 5 + 16);
+
+  doc.setDrawColor(214, 191, 168);
+  doc.setFillColor(255, 250, 243);
+  doc.roundedRect(
+    layout.leftMargin,
+    startY,
+    layout.contentWidth,
+    infoBoxHeight,
+    3,
+    3,
+    "FD"
+  );
+
+  doc.setFontSize(8);
+  doc.setTextColor(123, 75, 42);
+  doc.text("CUSTOMER", layout.leftMargin + 4, startY + 7);
+  doc.text("DATE", layout.rightColumnX, startY + 7);
+  doc.text("RECEIPT #", layout.rightColumnX, startY + 18);
 
   doc.setFontSize(11);
-  doc.text(`Receipt #: ${receiptData.receiptNumber}`, 20, 40);
-  doc.text(`Date: ${receiptData.receiptDate}`, 20, 48);
-  doc.text(`Customer: ${receiptData.customerName}`, 20, 56);
+  doc.setTextColor(43, 29, 20);
+  doc.text(customerLines, layout.leftMargin + 4, startY + 13);
+  doc.text(receiptData.receiptDate, layout.rightColumnX, startY + 13);
+  doc.text(receiptData.receiptNumber, layout.rightColumnX, startY + 24);
 
-  doc.line(20, 64, rightMargin, 64);
+  return startY + infoBoxHeight + 10;
+}
 
-  let currentY = drawPdfTableHeader(doc, 74, rightMargin);
-  currentY = drawPdfProductRows(doc, receiptData.products, currentY, rightMargin);
-  currentY = ensurePdfContentSpace(doc, currentY, 26);
+function drawProductsTable(doc, receiptData, startY, layout) {
+  let currentY = startY;
+
+  doc.setFontSize(9);
+  doc.setTextColor(123, 75, 42);
+  doc.text("PRODUCTS", layout.leftMargin, currentY);
+  currentY += 6;
+
+  currentY = drawProductsTableHeader(doc, currentY, layout);
+
+  receiptData.products.forEach(function (product, index) {
+    const productLabel = `${index + 1}. ${product.name}`;
+    const itemLines = doc.splitTextToSize(productLabel, layout.itemColumnWidth);
+    const rowHeight = Math.max(14, itemLines.length * 5 + 8);
+
+    if (needsPdfPageBreak(doc, currentY, rowHeight + 6, layout.bottomMargin)) {
+      currentY = startPdfContinuationPage(doc, receiptData, layout);
+      currentY = drawProductsTableHeader(doc, currentY, layout);
+    }
+
+    if (index % 2 === 0) {
+      doc.setFillColor(255, 250, 245);
+      doc.rect(layout.leftMargin, currentY, layout.contentWidth, rowHeight, "F");
+    }
+
+    doc.setFontSize(10);
+    doc.setTextColor(43, 29, 20);
+
+    const textY = currentY + 7;
+
+    doc.text(itemLines, layout.itemColumnX, textY);
+    doc.text(formatPreviewNumber(product.quantity), layout.quantityColumnX, textY, {
+      align: "right",
+    });
+    doc.text(formatCurrency(product.unitPrice), layout.unitPriceColumnX, textY, {
+      align: "right",
+    });
+    doc.text(formatCurrency(product.total), layout.subtotalColumnX, textY, {
+      align: "right",
+    });
+
+    doc.setDrawColor(230, 214, 196);
+    doc.line(
+      layout.leftMargin,
+      currentY + rowHeight,
+      layout.rightMargin,
+      currentY + rowHeight
+    );
+
+    currentY += rowHeight;
+  });
+
+  doc.setTextColor(43, 29, 20);
+  return currentY + 10;
+}
+
+function drawReceiptTotal(doc, receiptData, currentY, layout) {
+  currentY = ensurePdfSectionSpace(doc, currentY, 22, receiptData, layout);
+
+  doc.setFillColor(248, 239, 227);
+  doc.roundedRect(
+    layout.leftMargin,
+    currentY,
+    layout.contentWidth,
+    16,
+    3,
+    3,
+    "F"
+  );
+
+  doc.setFontSize(10);
+  doc.setTextColor(123, 75, 42);
+  doc.text("FINAL TOTAL", layout.leftMargin + 4, currentY + 10);
 
   doc.setFontSize(16);
-  doc.text(`FINAL TOTAL: ${formatCurrency(receiptData.total)}`, rightMargin, currentY, {
+  doc.setTextColor(90, 56, 37);
+  doc.text(formatCurrency(receiptData.total), layout.rightMargin - 4, currentY + 10, {
     align: "right",
   });
 
-  currentY += 16;
-  currentY = ensurePdfContentSpace(doc, currentY, 20);
+  doc.setTextColor(43, 29, 20);
+  return currentY + 24;
+}
+
+function drawReceiptFooter(doc, receiptData, currentY, layout) {
+  currentY = ensurePdfSectionSpace(doc, currentY, 22, receiptData, layout);
+
+  const footerLines = doc.splitTextToSize(
+    "Fresh coffee, warm service, and one more reason to come back.",
+    layout.contentWidth - 12
+  );
+
+  doc.setDrawColor(214, 191, 168);
+  doc.line(layout.leftMargin, currentY, layout.rightMargin, currentY);
 
   doc.setFontSize(10);
-  doc.text("Thank you for your visit!", pageWidth / 2, currentY, {
+  doc.setTextColor(90, 56, 37);
+  doc.text("Thank you for your visit!", layout.pageWidth / 2, currentY + 8, {
     align: "center",
   });
-  doc.text("Generated with Receipt Generator JS", pageWidth / 2, currentY + 8, {
+
+  doc.setFontSize(8);
+  doc.setTextColor(123, 75, 42);
+  doc.text(footerLines, layout.pageWidth / 2, currentY + 14, {
     align: "center",
   });
+
+  doc.setTextColor(43, 29, 20);
 }
 
-function drawPdfTableHeader(doc, startY, rightMargin) {
-  doc.setFontSize(11);
-  doc.text("Item", 20, startY);
-  doc.text("Qty", 120, startY, { align: "right" });
-  doc.text("Unit Price", 155, startY, { align: "right" });
-  doc.text("Total", rightMargin, startY, { align: "right" });
-  doc.line(20, startY + 5, rightMargin, startY + 5);
+function drawProductsTableHeader(doc, currentY, layout) {
+  doc.setFillColor(90, 56, 37);
+  doc.rect(layout.leftMargin, currentY, layout.contentWidth, 8, "F");
 
-  return startY + 12;
-}
-
-function drawPdfProductRows(doc, products, startY, rightMargin) {
-  let currentY = startY;
-
-  products.forEach(function (product, index) {
-    const productLabel = `${index + 1}. ${product.name}`;
-    const nameLines = doc.splitTextToSize(productLabel, 85);
-    const rowHeight = Math.max(8, nameLines.length * 6);
-
-    if (currentY + rowHeight + 10 > 275) {
-      doc.addPage();
-      currentY = drawPdfTableHeader(doc, 20, rightMargin);
-    }
-
-    doc.text(nameLines, 20, currentY);
-    doc.text(formatPreviewNumber(product.quantity), 120, currentY, { align: "right" });
-    doc.text(formatCurrency(product.unitPrice), 155, currentY, {
-      align: "right",
-    });
-    doc.text(formatCurrency(product.total), rightMargin, currentY, {
-      align: "right",
-    });
-
-    currentY += rowHeight;
-    doc.line(20, currentY + 2, rightMargin, currentY + 2);
-    currentY += 10;
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text("Item", layout.itemColumnX, currentY + 5.5);
+  doc.text("Qty", layout.quantityColumnX, currentY + 5.5, {
+    align: "right",
+  });
+  doc.text("Unit Price", layout.unitPriceColumnX, currentY + 5.5, {
+    align: "right",
+  });
+  doc.text("Subtotal", layout.subtotalColumnX, currentY + 5.5, {
+    align: "right",
   });
 
-  return currentY;
+  doc.setTextColor(43, 29, 20);
+  return currentY + 12;
+}
+
+function startPdfContinuationPage(doc, receiptData, layout) {
+  doc.addPage();
+
+  let currentY = drawReceiptHeader(doc, receiptData, layout, true);
+
+  doc.setFontSize(9);
+  doc.setTextColor(123, 75, 42);
+  doc.text(`Receipt #: ${receiptData.receiptNumber}`, layout.leftMargin, currentY);
+  doc.text(`Date: ${receiptData.receiptDate}`, layout.rightMargin, currentY, {
+    align: "right",
+  });
+
+  doc.setTextColor(43, 29, 20);
+  return currentY + 8;
+}
+
+function ensurePdfSectionSpace(doc, currentY, requiredHeight, receiptData, layout) {
+  if (!needsPdfPageBreak(doc, currentY, requiredHeight, layout.bottomMargin)) {
+    return currentY;
+  }
+
+  if (receiptData) {
+    return startPdfContinuationPage(doc, receiptData, layout);
+  }
+
+  doc.addPage();
+  return layout.topMargin;
+}
+
+function getPdfLayout(doc) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const leftMargin = 18;
+  const rightMargin = pageWidth - 18;
+  const contentWidth = rightMargin - leftMargin;
+  const subtotalColumnX = rightMargin - 4;
+  const unitPriceColumnX = subtotalColumnX - 32;
+  const quantityColumnX = unitPriceColumnX - 28;
+
+  return {
+    pageWidth,
+    pageHeight,
+    topMargin: 16,
+    bottomMargin: 18,
+    leftMargin,
+    rightMargin,
+    contentWidth,
+    itemColumnX: leftMargin + 4,
+    quantityColumnX,
+    unitPriceColumnX,
+    subtotalColumnX,
+    itemColumnWidth: quantityColumnX - leftMargin - 14,
+    customerColumnWidth: 92,
+    rightColumnX: leftMargin + 110,
+  };
 }
 
 // ======================================
@@ -659,16 +839,11 @@ function generateReceiptNumber() {
   return `RCPT-${timestamp}${randomNumber}`;
 }
 
-function ensurePdfContentSpace(doc, currentY, requiredHeight) {
+function needsPdfPageBreak(doc, currentY, requiredHeight, bottomMargin) {
   const pageHeight = doc.internal.pageSize.getHeight();
-  const bottomMargin = 20;
+  const safeBottomMargin = typeof bottomMargin === "number" ? bottomMargin : 20;
 
-  if (currentY + requiredHeight <= pageHeight - bottomMargin) {
-    return currentY;
-  }
-
-  doc.addPage();
-  return 20;
+  return currentY + requiredHeight > pageHeight - safeBottomMargin;
 }
 
 function sanitizeFileName(value) {
