@@ -8,6 +8,12 @@ const receiptForm = document.getElementById("receipt-form");
 // PDF download button
 const downloadButton = document.getElementById("download-pdf");
 
+// Add product button
+const addItemButton = document.getElementById("add-item-button");
+
+// Products container
+const itemsContainer = document.getElementById("items-container");
+
 
 // ======================================
 // EVENT LISTENERS
@@ -19,6 +25,7 @@ receiptForm.addEventListener("submit", handleFormSubmit);
 // Run generatePDF when the download button is clicked
 downloadButton.addEventListener("click", generatePDF);
 
+addItemButton.addEventListener("click", addProductCard);
 
 // ======================================
 // FORM HANDLING
@@ -188,5 +195,87 @@ function createReceiptTemplate(doc, receiptData, receiptNumber) {
 
   doc.text("www.receiptgeneratorjs.com", 105, 152, {
     align: "center",
+  });
+}
+
+// ======================================
+// PRODUCT MANAGEMENT
+// ======================================
+
+function addProductCard() {
+  // Count how many product cards already exist
+  const productCards = document.querySelectorAll(".item-card");
+
+  // The new product number is the current amount + 1
+  const productNumber = productCards.length + 1;
+
+  // Create a new product card
+  const newProductCard = document.createElement("div");
+  newProductCard.classList.add("item-card");
+
+  // Add the HTML structure inside the new product card
+  newProductCard.innerHTML = `
+    <div class="item-card-header">
+      <span>Product ${productNumber}</span>
+      <button type="button" class="remove-item-button">Remove</button>
+    </div>
+
+    <div class="item-fields">
+      <label>
+        Product Name
+        <input
+          type="text"
+          class="item-name"
+          placeholder="Example: Cappuccino"
+          required
+        />
+      </label>
+
+      <label>
+        Quantity
+        <input
+          type="number"
+          class="item-quantity"
+          min="1"
+          value="1"
+          required
+        />
+      </label>
+
+      <label>
+        Unit Price (€)
+        <input
+          type="number"
+          class="item-price"
+          placeholder="2.50"
+          step="0.01"
+          min="0"
+          required
+        />
+      </label>
+    </div>
+  `;
+
+  // Add the new product card to the products container
+  itemsContainer.appendChild(newProductCard);
+
+  // Select the remove button inside the new card
+  const removeButton = newProductCard.querySelector(".remove-item-button");
+
+  // Remove the product card when the remove button is clicked
+  removeButton.addEventListener("click", function () {
+    newProductCard.remove();
+    updateProductNumbers();
+  });
+}
+
+function updateProductNumbers() {
+  // Select all product cards
+  const productCards = document.querySelectorAll(".item-card");
+
+  // Update each product title based on its position
+  productCards.forEach(function (card, index) {
+    const productTitle = card.querySelector(".item-card-header span");
+    productTitle.textContent = `Product ${index + 1}`;
   });
 }
