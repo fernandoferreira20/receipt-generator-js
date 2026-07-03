@@ -217,39 +217,62 @@ hr {
 ========================== */
 
 .products-section {
-  margin-top: 20px;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #ead6c0;
 }
 
-.products-section h3 {
-  margin-bottom: 15px;
+.products-header {
+  margin-bottom: 18px;
+}
+
+.products-header h3 {
+  margin-bottom: 6px;
   color: #3f2619;
 }
 
-/* Container that stores all product rows */
+.products-header p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #7a5a45;
+}
+
 #items-container {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 
-/* One product row */
-.item-row {
+.item-card {
+  padding: 18px;
+  background: #fffaf5;
+  border: 1px solid #ead6c0;
+  border-radius: 16px;
+}
+
+.item-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: 700;
+  color: #5a3825;
+}
+
+.item-fields {
   display: grid;
-  grid-template-columns: 2fr 90px 130px;
-  gap: 12px;
-  width: 100%;
+  grid-template-columns: 1.5fr 0.7fr 1fr;
+  gap: 14px;
 }
 
-/* Prevent inputs from overflowing */
-.item-row input {
+.item-fields input {
   width: 100%;
   min-width: 0;
 }
 
-/* Add Product button */
 #add-item-button {
   width: 100%;
-  margin-top: 15px;
+  margin-top: 16px;
   background: #7b4b2a;
 }
 
@@ -257,22 +280,12 @@ hr {
   background: #5a3825;
 }
 
-/* ==========================
-   RESPONSIVE
-========================== */
-
 @media (max-width: 900px) {
-
   .app-container {
     grid-template-columns: 1fr;
   }
 
-  .preview-section {
-    order: -1;
-  }
-
-  .item-row {
+  .item-fields {
     grid-template-columns: 1fr;
   }
-
 }
