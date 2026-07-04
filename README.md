@@ -1,47 +1,79 @@
-# Receipt Generator JS
+# ☕ Receipt Generator JS
 
-A vanilla JavaScript web app for creating coffee shop receipts with live preview and PDF export.
+A modern web application built with Vanilla JavaScript that allows coffee shops to create professional receipts with live preview and PDF export.
+
+<p align="center">
+  <img src="assets/images/app-preview.png" width="900" alt="Receipt Generator Preview">
+</p>
 
 ![Version](https://img.shields.io/badge/version-1.0-8B5E3C?style=flat-square)
 ![Status](https://img.shields.io/badge/status-finished%20v1.0-6B8E23?style=flat-square)
 ![Responsive](https://img.shields.io/badge/ui-responsive-CB8C52?style=flat-square)
 
-## Demo
+---
+
+## 📑 Table of Contents
+
+- [Demo](#-demo)
+- [Screenshots](#-screenshots)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Project Roadmap](#-project-roadmap)
+- [Why I Built This](#-why-i-built-this)
+- [What I Learned](#-what-i-learned)
+- [Future Improvements](#-future-improvements)
+- [Author](#-author)
+- [License](#-license)
+
+---
+
+## 🚀 Demo
 
 **Live Demo**
 
-GitHub Pages (Coming Soon)
+> https://fernandoferreira20.github.io/receipt-generator-js/
 
-## Screenshots
+*(Available after GitHub Pages deployment.)*
+
+---
+
+## 📸 Screenshots
 
 ### Application
 
-Screenshot coming soon.
+![Application](docs/screenshots/application.png)
 
 ### Receipt Preview
 
-Screenshot coming soon.
+![Preview](docs/screenshots/preview.png)
 
 ### Generated PDF
 
-Screenshot coming soon.
+![PDF](docs/screenshots/pdf.png)
 
-## Features
+---
 
-✅ Live receipt preview  
-✅ Coffee shop branding with logo  
-✅ Dynamic coffee shop name  
-✅ Multiple product cards  
-✅ Automatic product and total calculation  
-✅ Discount support  
-✅ VAT / Tax support  
-✅ Payment method selection  
-✅ Professional receipt number format  
-✅ PDF export with branded layout  
-✅ Responsive interface  
-✅ Built with vanilla JavaScript
+## ✨ Features
 
-## Tech Stack
+- ✅ Live receipt preview
+- ✅ Coffee shop branding
+- ✅ Dynamic coffee shop name
+- ✅ Multiple product cards
+- ✅ Automatic subtotal and total calculation
+- ✅ Discount support
+- ✅ VAT / Tax calculation
+- ✅ Payment method selection
+- ✅ Professional receipt numbering
+- ✅ PDF export with branded layout
+- ✅ Responsive interface
+- ✅ Built with Vanilla JavaScript
+
+---
+
+## 🛠️ Tech Stack
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)
@@ -50,22 +82,29 @@ Screenshot coming soon.
 ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white)
 
-## Project Structure
+---
+
+## 📂 Project Structure
 
 ```text
 receipt-generator-js/
 ├── assets/
-│   └── icons/
-│       └── Logo.png
+│   ├── icons/
+│   │   └── Logo.png
+│   └── images/
 ├── css/
 │   └── style.css
+├── docs/
+│   └── screenshots/
 ├── js/
 │   └── script.js
 ├── index.html
 └── README.md
 ```
 
-## Installation
+---
+
+## 🚀 Installation
 
 Clone the repository:
 
@@ -73,26 +112,30 @@ Clone the repository:
 git clone https://github.com/fernandoferreira20/receipt-generator-js.git
 ```
 
-Move into the project folder:
+Move into the project directory:
 
 ```bash
 cd receipt-generator-js
 ```
 
-Open the project with **Live Server** in your editor, or open `index.html` directly in the browser.
+Run the application using **Live Server** or simply open `index.html` in your browser.
 
-## Usage
+---
 
-1. Fill in the receipt information.
+## 📖 Usage
+
+1. Enter the coffee shop information.
 2. Add one or more products.
-3. Choose the payment method.
-4. Configure discount and VAT / Tax if needed.
-5. Click **Generate Receipt** to validate and save the current receipt.
-6. Click **Download PDF** to export the generated receipt.
+3. Select the payment method.
+4. Configure Discount and VAT / Tax if required.
+5. Click **Generate Receipt** to validate and save the receipt.
+6. Click **Download PDF** to export the receipt.
 
-## Project Roadmap
+---
 
-### Version 1.0
+## 🗺️ Project Roadmap
+
+### ✅ Version 1.0
 
 - [x] Live receipt preview
 - [x] Coffee shop branding
@@ -101,51 +144,80 @@ Open the project with **Live Server** in your editor, or open `index.html` direc
 - [x] Dynamic product cards
 - [x] Automatic total calculation
 - [x] Discount support
-- [x] VAT / Tax support
-- [x] Payment method
-- [x] Professional PDF generation
-- [x] Logo inside the app
-- [x] Logo inside the PDF
-- [x] Professional receipt number
+- [x] VAT / Tax calculation
+- [x] Payment method selection
+- [x] Professional receipt numbering
+- [x] PDF generation
+- [x] Logo integration
 - [x] Responsive interface
 
-### Version 2.0
+### 🚀 Version 2.0
 
 - [ ] Receipt history
-- [ ] Dark mode
-- [ ] Multiple languages
 - [ ] Print mode
+- [ ] Multiple currencies
+- [ ] Multiple languages
+- [ ] Dark mode
+- [ ] Custom logo upload
+- [ ] Local Storage
 - [ ] Backend API
-- [ ] Authentication
+- [ ] User authentication
 
-## What I Learned
+---
+
+## 💡 Why I Built This
+
+This project was created to strengthen my JavaScript, HTML and CSS skills by developing a practical web application inspired by a real coffee shop workflow.
+
+The main objective was to improve my understanding of DOM manipulation, event-driven programming, project organization, and PDF generation while following a clean Git and GitHub workflow.
+
+---
+
+## 📚 What I Learned
+
+During this project I improved my understanding of:
 
 - DOM manipulation
-- Event listeners
-- Arrays
-- Objects
-- Functions
+- Event-driven programming
+- Dynamic UI rendering
+- Arrays and Objects
+- JavaScript functions
+- Responsive layouts
 - PDF generation with jsPDF
-- Project organization
-- Git
+- Code organization
+- Git workflow
 - GitHub workflow
 
-## Future Improvements
+---
 
-- Add receipt persistence for saved history
-- Create a print-friendly layout
-- Support multiple currencies and languages
-- Add optional themes such as dark mode
-- Explore a small backend for receipt storage
+## 🔮 Future Improvements
 
-## Author
+- Receipt history
+- Print-friendly receipts
+- Custom company logo upload
+- Multiple currencies
+- Multiple languages
+- Dark mode
+- Local Storage
+- Backend integration
 
-Fernando Ferreira
+---
 
-GitHub: https://github.com/fernandoferreira20
+## 👨‍💻 Author
 
-## License
+**Fernando Ferreira**
 
-MIT
+GitHub:
+https://github.com/fernandoferreira20
 
-Built as a practical front-end project focused on clean UI, DOM manipulation, and PDF generation with vanilla JavaScript.
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+⭐ If you found this project interesting, feel free to leave a star or fork the repository.
+
+Built with **HTML5**, **CSS3** and **Vanilla JavaScript**.
