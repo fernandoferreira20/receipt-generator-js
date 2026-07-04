@@ -48,7 +48,7 @@ A modern web application built with Vanilla JavaScript that allows coffee shops 
 
 ### Receipt Preview
 
-![Preview](assets/images/Preview.png)
+![Preview](assets/images/preview.png)
 
 ### Generated PDF
 
