@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icons/Logo.png" width="120" alt="Receipt Generator Logo">
+</p>
+
 # ☕ Receipt Generator JS
 
 A modern web application built with Vanilla JavaScript that allows coffee shops to create professional receipts with live preview and PDF export.
