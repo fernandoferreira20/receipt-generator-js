@@ -44,15 +44,15 @@ A modern web application built with Vanilla JavaScript that allows coffee shops 
 
 ### Application
 
-![Application](docs/screenshots/application.png)
+![Application](assets/images/app-preview.png)
 
 ### Receipt Preview
 
-![Preview](docs/screenshots/preview.png)
+![Preview](assets/images/Preview.png)
 
 ### Generated PDF
 
-![PDF](docs/screenshots/pdf.png)
+![PDF](assets/images/pdf.png)
 
 ---
 
